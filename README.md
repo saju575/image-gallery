@@ -1,4 +1,4 @@
-# Image Gallery Website Readme
+# Image Gallery
 
 **Live Link:** [View the Live Website](https://image-gallery-sakil.netlify.app/)
 

@@ -2,7 +2,7 @@ const SingleImage = ({
   img,
   handleDragEnd,
   handleDragStart,
-  handleDragOver,
+  handleDragEnter,
   index,
   dragging,
   dragOverIndex,
@@ -20,7 +20,7 @@ const SingleImage = ({
       } ${img.selected ? "" : "hover:before:bg-black/50"}`}
       draggable
       onDragStart={(e) => handleDragStart(e, index)}
-      onDragEnter={(e) => handleDragOver(e, index)}
+      onDragEnter={(e) => handleDragEnter(e, index)}
       onDragEnd={handleDragEnd}
       onDragOver={(e) => e.preventDefault()}
     >

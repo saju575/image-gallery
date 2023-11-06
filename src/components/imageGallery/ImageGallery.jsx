@@ -98,7 +98,7 @@ const ImageGallery = () => {
   /* 
     handler for onDragOver event listeners
   */
-  const handleDragOver = (e, index) => {
+  const handleDragEnter = (e, index) => {
     e.preventDefault();
     dragOverItem.current = index; // set the dragged over image index to the state
     setDragOverIndex(index);
@@ -177,7 +177,7 @@ const ImageGallery = () => {
                 img={img}
                 toggleImageSelection={toggleImageSelection}
                 handleDragStart={handleDragStart}
-                handleDragOver={handleDragOver}
+                handleDragEnter={handleDragEnter}
                 handleDragEnd={handleDragEnd}
               />
             ))}
