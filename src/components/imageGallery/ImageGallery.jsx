@@ -1,99 +1,36 @@
-// import { useState } from "react";
-// import { dummeyImageData } from "../../dummeyImage";
-
-// const ImageGallery = () => {
-
-//     // Create a copy of the initial data and add the "selected" property
-//   const initialDataWithSelection = dummeyImageData.map((image) => ({
-//     ...image,
-//     selected: false,
-//   }));
-
-//   const [imageData, setImageData] = useState(initialDataWithSelection);
-
-//   return (
-//     <section className="lg:w-1/2 md:w-3/4 w-full bg-white rounded-lg shadow">
-//       <div className="flex flex-col gap-y-2">
-//         <nav className="py-4 px-6">
-//           <article className="flex flex-row justify-between items-center">
-//             <h1 className="text-2xl font-bold">Gallery</h1>
-//             <button className="text-red-500 font-medium">Delete files</button>
-//           </article>
-//         </nav>
-//         <hr />
-//         <section className="h-full w-full p-6">
-//           <div className="grid lg:grid-cols-5 md:grid-cols-3 grid-cols-1 gap-6">
-//             {imageData.map((img) => {
-//               if (img.id === 1) {
-//                 return (
-//                   <div
-//                     key={img.id}
-//                     className="group relative before:absolute before:h-full before:w-full before:rounded-lg before:transition-colors before:cursor-move md:col-span-2 md:row-span-2 hover:before:bg-black/50"
-//                     draggable="true"
-//                   >
-//                     <img
-//                       alt="1"
-//                       loading="lazy"
-//                       decoding="async"
-//                       data-nimg="1"
-//                       className="h-full w-full max-w-full rounded-lg object-contain border-2 "
-//                       src={img.url}
-//                     />
-//                     <input
-//                       type="checkbox"
-//                       name="1"
-//                       id="1"
-//                       className="absolute top-4 left-4 h-5 w-5 accent-blue-500 group-hover:opacity-100 transition-opacity delay-100 duration-100 ease-linear cursor-pointer opacity-0 "
-//                     />
-//                   </div>
-//                 );
-//               } else {
-//                 return (
-//                   <div
-//                     key={img.id}
-//                     className="group relative  before:absolute before:h-full before:w-full before:rounded-lg before:transition-colors before:cursor-move col-span-1 hover:before:bg-black/50"
-//                     draggable="true"
-//                   >
-//                     <img
-//                       alt="2"
-//                       loading="lazy"
-//                       decoding="async"
-//                       data-nimg="1"
-//                       className="h-full w-full max-w-full rounded-lg object-contain border-2 undefined"
-//                       src={img.url}
-//                     />
-//                     <input
-//                       type="checkbox"
-//                       name="2"
-//                       id="2"
-//                       className="absolute top-4 left-4 h-5 w-5 accent-blue-500 group-hover:opacity-100 transition-opacity delay-100 duration-100 ease-linear cursor-pointer opacity-0"
-//                     />
-//                   </div>
-//                 );
-//               }
-//             })}
-//           </div>
-//         </section>
-//       </div>
-//     </section>
-//   );
-// };
-
-// export default ImageGallery;
-
 import { useRef, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { dummeyImageData } from "../../dummeyImage";
+import AddImage from "../addImage/AddImage";
+import SingleImage from "./SingleImage";
 
 const ImageGallery = () => {
+  /* 
+    load the dummy image data and set the selected false by default
+  */
   const initialDataWithSelection = dummeyImageData.map((image) => ({
     ...image,
     selected: false,
   }));
 
+  /* 
+    store the image data into a state
+  */
   const [imageData, setImageData] = useState(initialDataWithSelection);
 
-  //   const [allSelecedImages, setAllSelecedImages] = useState(true);
+  /* 
+    declear the 3 state
+    -> dragging  
+    -> dragged image index 
+    -> dragged over image
+  */
+  const [dragging, setDragging] = useState(false);
+  const [dragItemIndex, setDragItemIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
+  /* 
+    handler for toggling the selected image
+  */
   const toggleImageSelection = (id) => {
     const updatedImageData = imageData.map((image) =>
       image.id === id ? { ...image, selected: !image.selected } : image
@@ -101,11 +38,17 @@ const ImageGallery = () => {
     setImageData(updatedImageData);
   };
 
+  /* 
+    handler for deleting the selected images
+  */
   const deleteSelectedItems = () => {
     const updatedImageData = imageData.filter((image) => !image.selected);
     setImageData(updatedImageData);
   };
 
+  /* 
+    handler for de selecting the selected images
+  */
   const deselectAllImages = () => {
     const updatedImageData = imageData.map((image) => ({
       ...image,
@@ -114,6 +57,9 @@ const ImageGallery = () => {
     setImageData(updatedImageData);
   };
 
+  /* 
+    set the header title based on the selected images
+  */
   const numSelectedImages = imageData.filter((image) => image.selected).length;
   const title =
     numSelectedImages > 0 ? (
@@ -133,74 +79,110 @@ const ImageGallery = () => {
       <h1 className="text-2xl font-bold">Gallery</h1>
     );
 
+  /* 
+      references the draged image and drag over image
+  */
   const dragItem = useRef(null);
   const dragOverItem = useRef(null);
 
-  const handleSort = () => {
+  /* 
+      handler for onDragStart event listeners
+  */
+  const handleDragStart = (e, index) => {
+    e.dataTransfer.setData("text/plain", index);
+    dragItem.current = index;
+    setDragging(true);
+    setDragItemIndex(index); // set the dragged image index to the state
+  };
+
+  /* 
+    handler for onDragOver event listeners
+  */
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    dragOverItem.current = index; // set the dragged over image index to the state
+    setDragOverIndex(index);
+  };
+
+  /* 
+    handler for onDragEnd event listeners
+    -> That sort the images By LTR  
+  */
+  const handleDragEnd = () => {
     let _items = [...imageData];
-    const draggedItemContent = _items.splice(dragItem.current, 1)[0];
+    const draggedItemContent = _items.splice(dragItem.current, 1)[0]; // remove the dragged image
 
-    _items.splice(dragOverItem.current, 0, draggedItemContent);
+    _items.splice(dragOverItem.current, 0, draggedItemContent); //sort the images By LTR
 
-    dragItem.current = null;
+    dragItem.current = null; // set the reference null
     dragOverItem.current = null;
 
-    setImageData([..._items]);
+    // set the dragging state and drag index to null
+    setDragging(false);
+    setDragOverIndex(null);
+    setDragItemIndex(null);
+
+    setImageData([..._items]); // set the sort image data to state
+  };
+
+  /* 
+    handler to add new images
+  */
+  const handleAddImage = (imageFile) => {
+    // Create a new image component using the selected image file
+    const newImageComponent = {
+      id: uuidv4(), // create a new unique id
+      url: URL.createObjectURL(imageFile), // Use a temporary URL for the selected image
+
+      isChecked: false, // Initialize isChecked as false
+    };
+
+    // Update the imageComponents state by adding the new image component
+    setImageData([...imageData, newImageComponent]);
   };
 
   return (
     <section className="md:w-1/2  container mx-auto bg-white rounded-lg shadow">
       <div className="flex flex-col gap-y-2">
+        {/* 
+          nav section
+        */}
         <nav className="py-4 px-6">
           <article className="flex flex-row justify-between items-center">
             <>{title}</>
-            <button
-              className="text-red-500 font-medium cursor-pointer"
-              onClick={deleteSelectedItems}
-            >
-              Delete files
-            </button>
+            {numSelectedImages > 0 && (
+              <button
+                className="text-red-500 font-medium"
+                onClick={deleteSelectedItems}
+              >
+                Delete files
+              </button>
+            )}
           </article>
         </nav>
         <hr />
+
+        {/* 
+          gellery section
+        */}
         <section className="h-full w-full p-6">
           <div className="grid lg:grid-cols-5 md:grid-cols-4 grid-cols-3 gap-6">
             {imageData.map((img, index) => (
-              <div
-                key={img.id}
-                className={`group relative ${
-                  index === 0
-                    ? "before:absolute before:h-full before:w-full before:rounded-lg before:transition-colors before:cursor-move col-span-2 row-span-2"
-                    : "before:absolute before:h-full before:w-full before:rounded-lg before:transition-colors before:cursor-move col-span-1"
-                } hover:before:bg-black/50`}
-                draggable
-                onDragStart={() => (dragItem.current = index)}
-                onDragEnter={() => (dragOverItem.current = index)}
-                onDragEnd={handleSort}
-                onDragOver={(e) => e.preventDefault()}
-              >
-                <img
-                  alt={img.id}
-                  loading="lazy"
-                  decoding="async"
-                  data-nimg="1"
-                  className={`h-full w-full max-w-full rounded-lg object-contain border-2 ${
-                    img.selected ? "opacity-50" : "opacity-100"
-                  }`}
-                  src={img.url}
-                />
-                <input
-                  type="checkbox"
-                  name={img.id}
-                  id={img.id}
-                  className={`absolute top-4 left-4 h-5 w-5 accent-blue-500 group-hover:opacity-100 transition-opacity delay-100 duration-100 ease-linear cursor-pointer ${
-                    img.selected ? "opacity-100" : "opacity-0"
-                  }`}
-                  onChange={() => toggleImageSelection(img.id)}
-                  checked={img.selected}
-                />
-              </div>
+              <SingleImage
+                key={index}
+                index={index}
+                dragItemIndex={dragItemIndex}
+                dragOverIndex={dragOverIndex}
+                dragging={dragging}
+                img={img}
+                toggleImageSelection={toggleImageSelection}
+                handleDragStart={handleDragStart}
+                handleDragOver={handleDragOver}
+                handleDragEnd={handleDragEnd}
+              />
             ))}
+
+            <AddImage handleAddImage={handleAddImage} />
           </div>
         </section>
       </div>
